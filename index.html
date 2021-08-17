@@ -1,0 +1,341 @@
+<div id="app">
+	<title>Vue3 Todo-List</title>
+	<h1>{{title}}</h1>
+	<div>
+		<input type="text" v-model="list.text" v-if="!temp.text" placeholder="填入要做的代辦事項"/>
+		<input type="text" v-model="temp.text" v-if="temp.text" placeholder="填入要做的代辦事項"/>
+		<button type="submit" id="btn_add" v-if="!temp.text" @click="addTodo">增加</button>
+		<button type="submit" id="btn_add" v-if="temp.text" @click="doneTodo">修改</button>
+    </div>
+    <div class="button-group">
+		<button type="button" class="btn1" @click="classify='all'"><i class="bi bi-list-ul"></i>全部</button>
+		<button type="button" class="btn2" @click="classify='uncompleted'"><i class="bi bi-x-circle"></i>未完成</button>
+		<button type="button" class="btn3" @click="classify='completed'"><i class="bi bi-check-circle"></i>已完成</button>
+		<button type="button" class="btn4" @click="removeTodoAll"><i class="bi bi-trash"></i>清除全部</button>
+	</div>
+	<div class="status">
+		<span>代辦事項：總計:{{ list.length }}筆，{{ list.length-completelist }} 筆未完成，{{ completelist }}筆已完成</span>
+	</div>
+	<div>
+		<div class="todos">
+		<div class="draggable">
+			<transition-group name="slide" mode="out-in">
+				<div v-for="item in filterTodolist" class="list" :key="item.id">
+					<input type="checkbox" @click="completeTodo(item.id)" :checked="item.completed" :id="item.id" />
+					<label :class="{ 'completed': item.completed}">
+						{{item.text}}
+					</label>
+					<button type="button" class="btn_edit" @click="editTodo(item)"><i class="bi bi-pencil-square"></i></button>
+					<button type="button" class="btn_del" @click="removeTodo(item.id)"><i class="bi bi-x-circle-fill"></i></button>
+				</div>
+			</transition-group>
+		</div>
+	</div>
+</div>
+</div>
+<style>
+    @import url(//fonts.googleapis.com/earlyaccess/notosanstc.css);
+body {
+	font-family: "Noto Sans", "Noto Sans TC", "Roboto", "Segoe UI", "Helvetica",
+		"Arial", sans-serif;
+	display: flex;
+	justify-content: center;
+
+	background-image: url("https://i.imgur.com/iaE3hkf.jpg");
+	width: 100%;
+	height: 100%;
+	margin:0;
+}
+#app {
+	padding: 20px 40px;
+}
+h1 {
+	text-align: center;
+	font-weight: 300;
+}
+
+.todos{
+	background: rgba(white);
+	backdrop-filter: blur(16px);
+	overflow: hidden;
+	padding: 0px 20px;
+}
+
+.completed {
+    text-decoration: line-through;
+}
+
+input[type="text"] {
+	outline: none !important;
+	padding: 10px;
+	margin: 5px 0;
+	border: 0;
+	font-size: 1.2em;
+	border-radius: 2px;
+	transition: all ease-out 0.3s;
+
+}
+input[type="text"]:focus {
+	border-bottom: 4px solid #41baac;
+	transform: scale(1.05);
+}
+#btn_add {
+	cursor: pointer;
+	outline: none !important;
+	padding: 10px 20px;
+	background: #41baac;
+	border-radius: 2px;
+	border: none;
+	font-size: 1.2em;
+	color: white;
+	transition: all ease 0.3s;
+}
+
+#btn_add:hover {
+	filter: brightness(1.2);
+}
+
+.btn_del{
+	cursor: pointer;
+	outline: none !important;
+	padding: 0px 7px;
+	border-radius: 50%;
+	border: none;
+	font-size: 1.2em;
+	color: #41baac;
+	background: transparent;
+	position: absolute;
+	right: 10px;
+	transition: all 0.3s ease-in-out;
+}
+.btn_edit{
+	cursor: pointer;
+	outline: none !important;
+	padding: 0px 7px;
+	border-radius: 50%;
+	border: none;
+	font-size: 1.2em;
+	color: #41baac;
+	background: transparent;
+	position: absolute;
+	right: 40px;
+	transition: all 0.3s ease-in-out;
+}
+.btn_del:hover,.btn_edit:hover{
+	transform: scale(1.6)
+}
+
+.btn1{
+    background-color:#ECF5FF; color: black;
+	border-radius: 10%;
+	margin: 5px;
+}
+
+.btn2{
+    background-color:#ECF5FF; color: #AE0000;
+	border-radius: 10%;
+	margin: 5px;
+}
+
+.btn3{
+	background-color:#ECF5FF; color: green;
+	border-radius: 10%;
+	margin: 5px;
+}
+
+.btn4{
+	background-color:#ECF5FF; color: #FF5151;
+	border-radius: 10%;
+	margin: 5px;
+}
+
+.status{
+	text-align: center;
+	padding-top: 10px;
+}
+
+.draggable {
+	list-style-type: none;
+	margin: 60px 0;
+	padding: 0;
+}
+.list {
+	position: relative;
+	list-style-type: none;
+	font-size: 1.2em;
+	padding: 20px;
+	margin: 10px;
+	border-radius: 2px;
+	box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.2);
+	background-color: #eeeeee;
+	transition: all 0.5s;
+}
+.done {
+	filter: brightness(0.85);
+	text-decoration: line-through;
+	transition: all 0.3s;
+}
+
+/*Vue transition hook*/
+.slide-enter,
+.slide-leave-to {
+	opacity: 0;
+}
+.slide-enter-active {
+	animation: slide-in 0.3s ease-out;
+	transition: all 0.3s ease-out;
+}
+.slide-leave-active {
+	animation: slide-out 0.3s ease-out forwards;
+	transition: all 0.3s ease-out;
+	position: absolute;
+}
+.slide-move {
+	transition: transform 0.3s ease-out;
+}
+
+@keyframes slide-in {
+	from {
+		transform: translateX(30px);
+	}
+	to {
+		transform: translateX(0);
+	}
+}
+
+@keyframes slide-out {
+	from {
+		transform: translateX(0);
+	}
+	to {
+		transform: translateX(30px);
+	}
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-p34f1UUtsS3wqzfto5wAAmdvj+osOnFyQFpp4Ua3gs/ZVWx6oOypYoCJhGGScy+8"
+    crossorigin="anonymous"></script>
+<script type="module">
+	import { createApp,ref,computed,onMounted } from "https://cdnjs.cloudflare.com/ajax/libs/vue/3.2.0-beta.7/vue.esm-browser.min.js";
+	const app = createApp({
+		setup(){
+            const title = ref('Vue3 Todo-List');
+            const list = ref([{
+			id:0,
+			text:'出去買早餐',
+			completed:true,
+            },
+			{
+			id:1,
+			text:'買日常用品',
+			completed:false,
+            },
+			{
+			id:2,
+			text:'回家修改code',
+			completed:false,
+            },]);
+			const temp = ref({});
+			const classify = ref('all');
+            const donelist = ref('0');
+
+			function addTodo(){
+				let id = Date.now();
+                let title = list.value.text.trim();
+
+                if(title == ''){
+                return false
+                }
+                else{
+                list.value.push({
+                id:id,
+                text:title,
+                completed:false,
+                });
+                list.value.text='';
+                saveToLocalStorage();
+                };
+            };
+
+			function removeTodo(id){
+                const index = list.value.findIndex(item => item.id === id);
+                list.value.splice(index,1);
+                saveToLocalStorage();
+            };
+
+			function editTodo(item){
+                temp.value = { ...item }
+            };
+
+			function doneTodo(){
+                const index = list.value.findIndex(item => item.id === temp.value.id);
+                list.value[index] = temp.value;
+                temp.value = {};
+                saveToLocalStorage();
+            };
+
+			function completeTodo(id){
+                const index = list.value.findIndex(item => item.id === id);
+                list.value[index].completed = !list.value[index].completed;
+                saveToLocalStorage();
+            };
+
+            function removeTodoAll(){
+                list.value = [];
+                saveToLocalStorage();
+            };
+
+			function saveToLocalStorage(){
+                localStorage.setItem('JsonStorage',JSON.stringify(list.value));
+            };
+
+            const filterTodolist = computed(() => {
+				if (classify.value === 'all') {
+				return list.value;
+				} else if (classify.value === 'uncompleted') {
+					return list.value.filter(item => {
+						return item.completed === false;
+					})
+				} else if (classify.value === 'completed') {
+					return list.value.filter(item => {
+						return item.completed === true;
+					})
+				}
+			});
+
+			const completelist = computed(() => {
+				let completelistlength = list.value.filter(item => item.completed).length;
+                return completelistlength;
+			});
+
+			onMounted(() => {
+				if (localStorage.getItem('JsonStorage')) {
+                list.value = JSON.parse(localStorage.getItem('JsonStorage'));
+                };
+			});
+
+
+			return {
+				title,
+				list,
+				temp,
+				classify,
+				donelist,
+				filterTodolist,
+				completelist,
+
+				addTodo,
+				removeTodo,
+				editTodo,
+				doneTodo,
+                completeTodo,
+				removeTodoAll,
+				saveToLocalStorage,
+
+			}
+		}
+	});
+
+	app.mount('#app');
+</script>
